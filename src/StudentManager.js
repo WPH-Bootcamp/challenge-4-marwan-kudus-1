@@ -19,7 +19,8 @@ class StudentManager {
   // - students: Array untuk menyimpan semua siswa
   
   constructor() {
-    // Implementasi constructor di sini
+    this.students = [];
+    this.dataFile = null; // optional path for persistence
   }
 
   /**
@@ -29,7 +30,12 @@ class StudentManager {
    * TODO: Validasi bahwa ID belum digunakan
    */
   addStudent(student) {
-    // Implementasi method di sini
+    // pastikan ID unik
+    if (!student || !student.id) return false;
+    const exists = this.students.some((s) => String(s.id) === String(student.id));
+    if (exists) return false;
+    this.students.push(student);
+    return true;
   }
 
   /**
@@ -39,7 +45,10 @@ class StudentManager {
    * TODO: Cari dan hapus siswa dari array
    */
   removeStudent(id) {
-    // Implementasi method di sini
+    const idx = this.students.findIndex((s) => String(s.id) === String(id));
+    if (idx === -1) return false;
+    this.students.splice(idx, 1);
+    return true;
   }
 
   /**
@@ -49,7 +58,7 @@ class StudentManager {
    * TODO: Gunakan method array untuk mencari siswa
    */
   findStudent(id) {
-    // Implementasi method di sini
+    return this.students.find((s) => String(s.id) === String(id)) || null;
   }
 
   /**
@@ -60,7 +69,20 @@ class StudentManager {
    * TODO: Cari siswa dan update propertinya
    */
   updateStudent(id, data) {
-    // Implementasi method di sini
+    const student = this.findStudent(id);
+    if (!student) return false;
+    if (data.name !== undefined) {
+      if (String(data.name).trim() === '') return false;
+      student.name = String(data.name).trim();
+    }
+    if (data.class !== undefined) {
+      student.class = data.class;
+    }
+    // allow updating grades object entirely (optional)
+    if (data.grades !== undefined && typeof data.grades === 'object') {
+      student.grades = data.grades;
+    }
+    return true;
   }
 
   /**
@@ -68,7 +90,7 @@ class StudentManager {
    * @returns {Array} Array berisi semua siswa
    */
   getAllStudents() {
-    // Implementasi method di sini
+    return this.students.slice();
   }
 
   /**
@@ -78,7 +100,12 @@ class StudentManager {
    * TODO: Sort siswa berdasarkan rata-rata (descending) dan ambil n teratas
    */
   getTopStudents(n) {
-    // Implementasi method di sini
+    const withAvg = this.students.map((s) => ({
+      student: s,
+      avg: typeof s.getAverage === 'function' ? s.getAverage() : 0,
+    }));
+    withAvg.sort((a, b) => b.avg - a.avg);
+    return withAvg.slice(0, n).map((x) => x.student);
   }
 
   /**
@@ -86,7 +113,17 @@ class StudentManager {
    * TODO: Loop semua siswa dan panggil displayInfo() untuk masing-masing
    */
   displayAllStudents() {
-    // Implementasi method di sini
+    if (this.students.length === 0) {
+      console.log('Belum ada data siswa.');
+      return;
+    }
+    this.students.forEach((s) => {
+      if (typeof s.displayInfo === 'function') {
+        s.displayInfo();
+      } else {
+        console.log(s);
+      }
+    });
   }
 
   /**
@@ -95,7 +132,7 @@ class StudentManager {
    * @returns {Array} Array siswa dalam kelas tersebut
    */
   getStudentsByClass(className) {
-    // Implementasi method di sini (BONUS)
+    return this.students.filter((s) => s.class === className);
   }
 
   /**
@@ -104,7 +141,34 @@ class StudentManager {
    * @returns {object} Object berisi statistik (jumlah siswa, rata-rata kelas, dll)
    */
   getClassStatistics(className) {
-    // Implementasi method di sini (BONUS)
+    const list = this.getStudentsByClass(className);
+    if (list.length === 0) return { count: 0, average: 0 };
+    const total = list.reduce((sum, s) => sum + (typeof s.getAverage === 'function' ? s.getAverage() : 0), 0);
+    return { count: list.length, average: parseFloat((total / list.length).toFixed(2)) };
+  }
+
+  /* Persistence helpers */
+  setDataFile(path) {
+    this.dataFile = path;
+  }
+
+  loadFromObjectArray(arr, StudentClass) {
+    // arr is array of plain objects; convert to Student instances if StudentClass provided
+    if (!Array.isArray(arr)) return;
+    this.students = arr.map((obj) => {
+      if (StudentClass) {
+        const s = new StudentClass(obj.id, obj.name, obj.class);
+        if (obj.grades && typeof obj.grades === 'object') {
+          s.grades = obj.grades;
+        }
+        return s;
+      }
+      return obj;
+    });
+  }
+
+  toSerializable() {
+    return this.students.map((s) => ({ id: s.id, name: s.name, class: s.class, grades: s.grades }));
   }
 }
 

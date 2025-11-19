@@ -21,7 +21,19 @@ class Student {
   // - grades: Object untuk menyimpan nilai {subject: score}
   
   constructor(id, name, studentClass) {
-    // Implementasi constructor di sini
+    if (id === undefined || id === null || id === '') {
+      throw new Error('ID siswa harus diisi');
+    }
+
+    if (!name || String(name).trim() === '') {
+      throw new Error('Nama siswa tidak boleh kosong');
+    }
+
+    this.id = id;
+    this.name = String(name).trim();
+    // gunakan properti bernama `class` sesuai spesifikasi README
+    this.class = studentClass || '';
+    this.grades = {};
   }
 
   /**
@@ -31,7 +43,17 @@ class Student {
    * TODO: Validasi bahwa score harus antara 0-100
    */
   addGrade(subject, score) {
-    // Implementasi method di sini
+    if (!subject || String(subject).trim() === '') {
+      throw new Error('Nama mata pelajaran tidak boleh kosong');
+    }
+
+    const s = Number(score);
+    if (Number.isNaN(s) || s < 0 || s > 100) {
+      throw new Error('Nilai harus berupa angka antara 0 dan 100');
+    }
+
+    this.grades[String(subject).trim()] = s;
+    return true;
   }
 
   /**
@@ -40,7 +62,12 @@ class Student {
    * TODO: Hitung total nilai dibagi jumlah mata pelajaran
    */
   getAverage() {
-    // Implementasi method di sini
+    const subjects = Object.keys(this.grades);
+    if (subjects.length === 0) return 0;
+
+    const total = subjects.reduce((sum, subj) => sum + Number(this.grades[subj] || 0), 0);
+    const avg = total / subjects.length;
+    return parseFloat(avg.toFixed(2));
   }
 
   /**
@@ -49,7 +76,8 @@ class Student {
    * TODO: Return "Lulus" jika rata-rata >= 75, selain itu "Tidak Lulus"
    */
   getGradeStatus() {
-    // Implementasi method di sini
+    const avg = this.getAverage();
+    return avg >= 75 ? 'Lulus' : 'Tidak Lulus';
   }
 
   /**
@@ -57,7 +85,22 @@ class Student {
    * TODO: Tampilkan ID, Nama, Kelas, semua nilai, rata-rata, dan status
    */
   displayInfo() {
-    // Implementasi method di sini
+    console.log(`ID: ${this.id}`);
+    console.log(`Nama: ${this.name}`);
+    console.log(`Kelas: ${this.class}`);
+    console.log('Mata Pelajaran:');
+    const subjects = Object.keys(this.grades);
+    if (subjects.length === 0) {
+      console.log('  - (belum ada nilai)');
+    } else {
+      subjects.forEach((subj) => {
+        console.log(`  - ${subj}: ${this.grades[subj]}`);
+      });
+    }
+    const avg = this.getAverage();
+    console.log(`Rata-rata: ${avg.toFixed(2)}`);
+    console.log(`Status: ${this.getGradeStatus()}`);
+    console.log('------------------------');
   }
 }
 
